@@ -2,8 +2,8 @@ import json
 import logging
 from abc import abstractmethod, ABC
 
-from config.event_conf import EventConf
-from consumer.utils.custom_default_consumer import CustomDefaultConsumer
+from src.config.event_conf import EventConf
+from src.consumer.utils.custom_default_consumer import CustomDefaultConsumer
 
 
 class BaseConsumer(CustomDefaultConsumer, ABC):

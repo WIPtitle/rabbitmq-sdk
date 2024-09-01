@@ -1,7 +1,7 @@
 from enum import Enum
 
-from config.service import Service
-from event.impl.magnetic_reeds_listener.reed_changed_value import ReedChangedValue
+from src.config.service import Service
+from src.event.impl.magnetic_reeds_listener.reed_changed_value import ReedChangedValue
 
 
 class EventConf(Enum):

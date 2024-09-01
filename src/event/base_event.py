@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from config.event_conf import EventConf
+from src.config.event_conf import EventConf
 
 
 class BaseEvent(ABC):

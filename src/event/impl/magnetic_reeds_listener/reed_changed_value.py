@@ -1,6 +1,6 @@
-from config.event_conf import EventConf
-from event.base_event import BaseEvent
-from event.impl.magnetic_reeds_listener.enums.status import Status
+from src.config.event_conf import EventConf
+from src.event.base_event import BaseEvent
+from src.event.impl.magnetic_reeds_listener.enums.status import Status
 
 
 class ReedChangedValue(BaseEvent):
