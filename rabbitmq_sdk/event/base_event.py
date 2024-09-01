@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.rabbitmq_sdk.config.event_conf import EventConf
+from rabbitmq_sdk.config.event_conf import EventConf
 
 
 class BaseEvent(ABC):

@@ -12,3 +12,5 @@ authors = [
 dependencies = [
     "pika==1.3.2"
 ]
+[tool.setuptools.packages.find]
+where = ["rabbitmq_sdk"]
