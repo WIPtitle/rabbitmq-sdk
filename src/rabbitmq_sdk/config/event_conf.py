@@ -1,7 +1,7 @@
 from enum import Enum
 
-from src.config.service import Service
-from src.event.impl.magnetic_reeds_listener.reed_changed_value import ReedChangedValue
+from src.rabbitmq_sdk.config.service import Service
+from src.rabbitmq_sdk.event.impl.magnetic_reeds_listener.reed_changed_value import ReedChangedValue
 
 
 class EventConf(Enum):
