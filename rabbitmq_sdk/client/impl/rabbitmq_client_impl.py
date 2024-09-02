@@ -2,7 +2,7 @@ import json
 import logging
 import pika
 
-from src.rabbitmq_sdk.client.rabbitmq_client import RabbitMQClient
+from rabbitmq_sdk.client.rabbitmq_client import RabbitMQClient
 
 
 def get_exchange_name(event_name):
