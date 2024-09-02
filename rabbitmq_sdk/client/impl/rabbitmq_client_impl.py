@@ -3,6 +3,9 @@ import logging
 import pika
 
 from rabbitmq_sdk.client.rabbitmq_client import RabbitMQClient
+from rabbitmq_sdk.consumer.base_consumer import BaseConsumer
+from rabbitmq_sdk.enums.service import Service
+from rabbitmq_sdk.event.base_event import BaseEvent
 
 
 def get_exchange_name(event_name):
@@ -30,7 +33,7 @@ class RabbitMQClientImpl(RabbitMQClient):
         )
         return cls(connection_params)
 
-    def with_current_service(self, current_service):
+    def with_current_service(self, current_service: Service):
         self.current_service = current_service
         return self
 
@@ -67,7 +70,7 @@ class RabbitMQClientImpl(RabbitMQClient):
     def is_current_service_set(self):
         return self.current_service is not None
 
-    def publish(self, base_event):
+    def publish(self, base_event: BaseEvent):
         self.init_connection_and_channel()
         if not self.is_current_service_set():
             self.logger.error(
@@ -75,7 +78,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             )
             return False
 
-        if base_event.service_from != self.current_service:
+        if base_event.get_service_from() != self.current_service:
             self.logger.error(
                 "Event service_from does not match current service, are you publishing the right event from the right service?"
             )
@@ -84,7 +87,7 @@ class RabbitMQClientImpl(RabbitMQClient):
         try:
             self.publishing_channel.confirm_delivery()
 
-            exchange_name = get_exchange_name(base_event.event_name)
+            exchange_name = get_exchange_name(base_event.get_event().get_name())
             self.logger.info(f"Declaring exchange {exchange_name}")
             self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
@@ -112,7 +115,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             self.logger.error("Exception while publishing message", e)
             return False
 
-    def consume(self, consumer):
+    def consume(self, base_consumer: BaseConsumer):
         self.init_connection_and_channel()
         if not self.is_current_service_set():
             self.logger.error(
@@ -122,20 +125,20 @@ class RabbitMQClientImpl(RabbitMQClient):
 
         self.logger.info("Starting consumer")
         channel = self.open_message_broker_channel()
-        consumer.channel = channel
+        base_consumer.channel = channel
 
         try:
-            exchange_name = get_exchange_name(consumer.event_name)
+            exchange_name = get_exchange_name(base_consumer.get_event().get_name())
             self.logger.info(f"Declaring exchange {exchange_name}")
             self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
-            queue_name = get_queue_name(consumer.event_name, self.current_service.name)
+            queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
             self.logger.info(f"Declaring queue {queue_name}")
             channel.queue_declare(queue=queue_name, durable=True)
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
 
-            channel.basic_consume(queue=queue_name, on_message_callback=consumer.handle_delivery, auto_ack=False)
+            channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
 
             return True
         except Exception as e:

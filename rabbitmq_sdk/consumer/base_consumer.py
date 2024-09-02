@@ -1,9 +1,11 @@
 import json
 import logging
 from abc import abstractmethod, ABC
+from typing import Type
 
-from rabbitmq_sdk.config.event_conf import EventConf
-from rabbitmq_sdk.consumer.utils import CustomDefaultConsumer
+from rabbitmq_sdk.consumer.utils.custom_default_consumer import CustomDefaultConsumer
+from rabbitmq_sdk.enums.event import Event
+from rabbitmq_sdk.event.base_event import BaseEvent
 
 
 class BaseConsumer(CustomDefaultConsumer, ABC):
@@ -18,7 +20,7 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
         try:
             self.logger.info("Received an event")
             message = body.decode('utf-8')
-            event = json.loads(message, object_hook=self.event_class())
+            event = json.loads(message, object_hook=self.create_event_instance)
             self.do_handle(event)
             self.send_ack(method.delivery_tag)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
@@ -29,16 +31,15 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
     def send_ack(self, delivery_tag):
         self.channel.basic_ack(delivery_tag)
 
-    @property
-    def event_name(self):
-        return self.get_event_config().get_event_name()
-
-    @property
-    def event_class(self):
-        return self.get_event_config().get_event_class()
+    def create_event_instance(self, data):
+        return self.event_class()(**data)
 
     @abstractmethod
-    def get_event_config(self) -> EventConf:
+    def get_event(self) -> Event:
+        pass
+
+    @abstractmethod
+    def event_class(self) -> Type[BaseEvent]:
         pass
 
     @abstractmethod

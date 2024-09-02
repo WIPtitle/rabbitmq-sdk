@@ -1,23 +1,17 @@
 from abc import ABC, abstractmethod
 
-from rabbitmq_sdk.config.event_conf import EventConf
+from rabbitmq_sdk.enums.event import Event
+from rabbitmq_sdk.enums.service import Service
 
 
 class BaseEvent(ABC):
     @abstractmethod
-    def __init__(self, configuration: EventConf):
-        if configuration is None:
-            raise ValueError("Configuration cannot be null")
-        if not isinstance(self, configuration.get_event_class()):
-            raise RuntimeError(
-                "Invalid configuration: instantiating event different from class specified in its configuration"
-            )
-        self.event_config = configuration
+    def __init__(self, service: Service, event: Event):
+        self.service = service
+        self.event = event
 
-    @property
-    def service_from(self):
-        return self.event_config.get_service_from()
+    def get_service_from(self) -> Service:
+        return self.service
 
-    @property
-    def event_name(self):
-        return self.event_config.get_event_name()
+    def get_event(self) -> Event:
+        return self.event
