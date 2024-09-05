@@ -92,7 +92,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
             self.logger.info("Trying to publish message")
-            message = json.dumps(base_event, default=lambda o: o.__dict__)
+            message = json.dumps(base_event.to_dict())
 
             self.publishing_channel.basic_publish(
                 exchange=exchange_name,

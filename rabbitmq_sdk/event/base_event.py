@@ -15,3 +15,12 @@ class BaseEvent(ABC):
 
     def get_event(self) -> Event:
         return self.event
+
+    @abstractmethod
+    def to_dict(self):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data):
+        pass
