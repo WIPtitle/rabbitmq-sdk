@@ -4,7 +4,7 @@ from rabbitmq_sdk.event.base_event import BaseEvent
 from rabbitmq_sdk.event.impl.magnetic_reeds_listener.enums.status import Status
 
 
-class ReedChangedValue(BaseEvent):
+class ReedChangedStatus(BaseEvent):
     def __init__(self, gpio_pin_number: int, status: Status):
         super().__init__(Service.MAGNETIC_REEDS_LISTENER, Event.REED_CHANGED_VALUE)
         self.gpio_pin_number = gpio_pin_number
