@@ -1,6 +1,7 @@
 import json
 import logging
 import pika
+from pika.exceptions import UnroutableError
 
 from rabbitmq_sdk.client.rabbitmq_client import RabbitMQClient
 from rabbitmq_sdk.consumer.base_consumer import BaseConsumer
@@ -24,6 +25,7 @@ class RabbitMQClientImpl(RabbitMQClient):
         self.publishing_channel = None
         self.current_service = None
 
+
     @classmethod
     def from_config(cls, host, port, username, password):
         connection_params = pika.ConnectionParameters(
@@ -33,45 +35,43 @@ class RabbitMQClientImpl(RabbitMQClient):
         )
         return cls(connection_params)
 
+
     def with_current_service(self, current_service: Service):
         self.current_service = current_service
         return self
 
-    def connect(self):
-        if self.connection is None or self.connection.is_closed:
-            self.connection = pika.BlockingConnection(self.connection_params)
-            self.publishing_channel = self.connection.channel()
 
-    def close(self):
-        if self.connection and not self.connection.is_closed:
-            self.connection.close()
+    def is_current_service_set(self):
+        return self.current_service is not None
 
-    def get_publishing_channel(self):
-        if self.publishing_channel is None or self.publishing_channel.is_closed:
-            self.connect()
-        return self.publishing_channel
 
-    def init_connection_and_channel(self):
+    def new_channel(self):
+        return self.connection.channel()
+
+
+    def init_connection(self):
         if self.connection is None or self.connection.is_closed:
             try:
                 self.connection = pika.BlockingConnection(self.connection_params)
             except Exception as e:
                 raise RuntimeError("Can't connect to RabbitMQ") from e
 
+
+    def init_publishing_channel(self):
         if self.publishing_channel is None or self.publishing_channel.is_closed:
-            self.publishing_channel = self.open_message_broker_channel()
+            try:
+                self.publishing_channel = self.connection.channel()
+            except Exception as e:
+                raise RuntimeError("Could not create RabbitMQ channel for websocket") from e
 
-    def open_message_broker_channel(self):
-        try:
-            return self.connection.channel()
-        except Exception as e:
-            raise RuntimeError("Could not create RabbitMQ channel for websocket") from e
 
-    def is_current_service_set(self):
-        return self.current_service is not None
+    def init_connection_and_publishing_channel(self):
+        self.init_connection()
+        self.init_publishing_channel()
+
 
     def publish(self, base_event: BaseEvent):
-        self.init_connection_and_channel()
+        self.init_connection_and_publishing_channel()
         if not self.is_current_service_set():
             self.logger.error(
                 "Current service not set, use with_current_service to set it before trying to publish an event"
@@ -94,16 +94,15 @@ class RabbitMQClientImpl(RabbitMQClient):
             self.logger.info("Trying to publish message")
             message = json.dumps(base_event.to_dict())
 
-            self.publishing_channel.basic_publish(
-                exchange=exchange_name,
-                routing_key='',
-                body=message,
-                properties=pika.BasicProperties(delivery_mode=2)
-            )
-            has_been_published = self.publishing_channel.wait_for_confirms()
-
-            if not has_been_published:
-                self.logger.error(f"Could not publish message")
+            try:
+                self.publishing_channel.basic_publish(
+                    exchange=exchange_name,
+                    routing_key='',
+                    body=message,
+                    properties=pika.BasicProperties(delivery_mode=2)
+                )
+            except UnroutableError as e:
+                self.logger.error(f"Could not publish message", e)
                 return False
 
             return True
@@ -116,7 +115,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
     def consume(self, base_consumer: BaseConsumer):
-        self.init_connection_and_channel()
+        self.init_connection_and_publishing_channel()
         if not self.is_current_service_set():
             self.logger.error(
                 "Current service not set, use with_current_service to set it before trying to start a consumer"
@@ -124,7 +123,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
         self.logger.info("Starting consumer")
-        channel = self.open_message_broker_channel()
+        channel = self.new_channel()
         base_consumer.channel = channel
 
         try:
