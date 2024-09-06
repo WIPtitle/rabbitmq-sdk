@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class Status(Enum):
+class ReedStatus(Enum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"

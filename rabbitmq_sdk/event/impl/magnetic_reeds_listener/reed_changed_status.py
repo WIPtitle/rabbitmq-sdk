@@ -1,11 +1,11 @@
 from rabbitmq_sdk.enums.event import Event
 from rabbitmq_sdk.enums.service import Service
 from rabbitmq_sdk.event.base_event import BaseEvent
-from rabbitmq_sdk.event.impl.magnetic_reeds_listener.enums.status import Status
+from rabbitmq_sdk.event.impl.magnetic_reeds_listener.enums.reed_status import ReedStatus
 
 
 class ReedChangedStatus(BaseEvent):
-    def __init__(self, gpio_pin_number: int, status: Status):
+    def __init__(self, gpio_pin_number: int, status: ReedStatus):
         super().__init__(Service.MAGNETIC_REEDS_LISTENER, Event.REED_CHANGED_STATUS)
         self.gpio_pin_number = gpio_pin_number
         self.status = status
@@ -19,7 +19,7 @@ class ReedChangedStatus(BaseEvent):
     @classmethod
     def from_dict(cls, data):
         gpio_pin_number = data["gpio_pin_number"]
-        status = Status(data["status"])
+        status = ReedStatus(data["status"])
         return cls(gpio_pin_number, status)
 
     @property
@@ -27,7 +27,7 @@ class ReedChangedStatus(BaseEvent):
         return self._gpio_pin_number
 
     @gpio_pin_number.setter
-    def gpio_pin_number(self, value):
+    def gpio_pin_number(self, value: int):
         self._gpio_pin_number = value
 
     @property
@@ -35,5 +35,5 @@ class ReedChangedStatus(BaseEvent):
         return self._status
 
     @status.setter
-    def status(self, value):
+    def status(self, value: ReedStatus):
         self._status = value
