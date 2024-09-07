@@ -1,3 +1,5 @@
+import base64
+
 from rabbitmq_sdk.enums.event import Event
 from rabbitmq_sdk.enums.service import Service
 from rabbitmq_sdk.event.base_event import BaseEvent
@@ -5,22 +7,27 @@ from rabbitmq_sdk.event.impl.rtsp_cameras_listener.enums.camera_status import Ca
 
 
 class CameraChangedStatus(BaseEvent):
-    def __init__(self, ip: str, status: CameraStatus):
+    def __init__(self, ip: str, status: CameraStatus, body: bytes | None = None):
         super().__init__(Service.RTSP_CAMERAS_LISTENER, Event.CAMERA_CHANGED_STATUS)
         self.ip = ip
         self.status = status
+        self.body = body
 
     def to_dict(self):
-        return {
+        event_dict = {
             "ip": self.ip,
             "status": self.status.value
         }
+        if self.body:
+            event_dict["body"] = base64.b64encode(self.body).decode('utf-8')
+        return event_dict
 
     @classmethod
     def from_dict(cls, data):
-        gpio_pin_number = data["ip"]
+        ip = data["ip"]
         status = CameraStatus(data["status"])
-        return cls(gpio_pin_number, status)
+        body = base64.b64decode(data["body"]) if "body" in data else None
+        return cls(ip, status, body)
 
     @property
     def ip(self):
