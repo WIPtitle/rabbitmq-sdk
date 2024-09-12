@@ -3,12 +3,12 @@ import base64
 from rabbitmq_sdk.enums.event import Event
 from rabbitmq_sdk.enums.service import Service
 from rabbitmq_sdk.event.base_event import BaseEvent
-from rabbitmq_sdk.event.impl.rtsp_cameras_listener.enums.camera_status import CameraStatus
+from rabbitmq_sdk.event.impl.devices_manager.enums.camera_status import CameraStatus
 
 
 class CameraChangedStatus(BaseEvent):
     def __init__(self, ip: str, status: CameraStatus, blob: bytes | None, timestamp: int):
-        super().__init__(Service.RTSP_CAMERAS_LISTENER, Event.CAMERA_CHANGED_STATUS)
+        super().__init__(Service.DEVICES_MANAGER, Event.CAMERA_CHANGED_STATUS)
         self.ip = ip
         self.status = status
         self.blob = blob
