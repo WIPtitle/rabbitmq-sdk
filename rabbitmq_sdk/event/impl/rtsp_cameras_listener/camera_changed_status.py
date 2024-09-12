@@ -7,16 +7,18 @@ from rabbitmq_sdk.event.impl.rtsp_cameras_listener.enums.camera_status import Ca
 
 
 class CameraChangedStatus(BaseEvent):
-    def __init__(self, ip: str, status: CameraStatus, blob: bytes | None = None):
+    def __init__(self, ip: str, status: CameraStatus, blob: bytes | None, timestamp: int):
         super().__init__(Service.RTSP_CAMERAS_LISTENER, Event.CAMERA_CHANGED_STATUS)
         self.ip = ip
         self.status = status
         self.blob = blob
+        self.timestamp = timestamp
 
     def to_dict(self):
         event_dict = {
             "ip": self.ip,
-            "status": self.status.value
+            "status": self.status.value,
+            "timestamp": self.timestamp
         }
         if self.blob is not None:
             event_dict["blob"] = base64.b64encode(self.blob).decode('utf-8')
@@ -27,7 +29,8 @@ class CameraChangedStatus(BaseEvent):
         ip = data["ip"]
         status = CameraStatus(data["status"])
         blob = base64.b64decode(data["blob"]) if "blob" in data else None
-        return cls(ip, status, blob)
+        timestamp = int(data["timestamp"])
+        return cls(ip, status, blob, timestamp)
 
     @property
     def ip(self):
@@ -52,3 +55,11 @@ class CameraChangedStatus(BaseEvent):
     @blob.setter
     def blob(self, value: bytes):
         self._blob = value
+
+    @property
+    def timestamp(self):
+        return self._timestamp
+
+    @timestamp.setter
+    def timestamp(self, value: int):
+        self._timestamp = value
