@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 
 import pika
 from pika.exceptions import UnroutableError
@@ -124,6 +125,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
         self.logger.info("Starting consumer")
+        sys.stdout.flush()
         channel = self.new_channel()
         base_consumer.channel = channel
 
@@ -132,6 +134,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             self.logger.info(f"Declaring exchange {exchange_name}")
             self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
             print(exchange_name)
+            sys.stdout.flush()
 
             queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
             self.logger.info(f"Declaring queue {queue_name}")
@@ -139,6 +142,7 @@ class RabbitMQClientImpl(RabbitMQClient):
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
             print(queue_name)
+            sys.stdout.flush()
 
             channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
 
