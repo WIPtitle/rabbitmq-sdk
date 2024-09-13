@@ -20,15 +20,15 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
 
     def handle_delivery(self, channel, method, properties, body):
         try:
-            self.logger.info("Received an event")
+            print("Received an event")
             message = body.decode('utf-8')
             data = json.loads(message)
             self.do_handle(BaseEvent.from_dict(data))
             self.send_ack(method.delivery_tag)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            self.logger.error("Can't process entity in queue", e)
+            print("Can't process entity in queue", e)
         except Exception as e:
-            self.logger.error("Can't send ack back to rabbitmq", e)
+            print("Can't send ack back to rabbitmq", e)
 
 
     def send_ack(self, delivery_tag):
