@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 from abc import abstractmethod, ABC
 from typing import Type
 
@@ -21,15 +22,18 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
     def handle_delivery(self, channel, method, properties, body):
         try:
             print("Received an event")
+            sys.stdout.flush()
             message = body.decode('utf-8')
             data = json.loads(message)
             self.do_handle(BaseEvent.from_dict(data))
             self.send_ack(method.delivery_tag)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             print("Can't process entity in queue", e)
+            sys.stdout.flush()
             raise RuntimeError(e)
         except Exception as e:
             print("Can't send ack back to rabbitmq", e)
+            sys.stdout.flush()
             raise RuntimeError(e)
 
 
