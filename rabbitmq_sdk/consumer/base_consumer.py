@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from abc import abstractmethod, ABC
 from typing import Type
 

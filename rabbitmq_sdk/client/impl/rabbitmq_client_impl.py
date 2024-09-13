@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 
 import pika
 from pika.exceptions import UnroutableError
