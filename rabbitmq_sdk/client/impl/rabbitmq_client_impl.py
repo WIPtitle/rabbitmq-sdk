@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 
 import pika
 from pika.exceptions import UnroutableError
@@ -116,33 +117,37 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
     def consume(self, base_consumer: BaseConsumer):
-        self.init_connection_and_publishing_channel()
-        if not self.is_current_service_set():
-            self.logger.error(
-                "Current service not set, use with_current_service to set it before trying to start a consumer"
-            )
-            return False
+        def start_consumer():
+            self.init_connection_and_publishing_channel()
+            if not self.is_current_service_set():
+                self.logger.error(
+                    "Current service not set, use with_current_service to set it before trying to start a consumer"
+                )
+                return False
 
-        self.logger.info("Starting consumer")
+            self.logger.info("Starting consumer")
 
-        channel = self.new_channel()
-        base_consumer.channel = channel
+            channel = self.new_channel()
+            base_consumer.channel = channel
 
-        try:
-            exchange_name = get_exchange_name(base_consumer.get_event().get_name())
-            self.logger.info(f"Declaring exchange {exchange_name}")
-            self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
+            try:
+                exchange_name = get_exchange_name(base_consumer.get_event().get_name())
+                self.logger.info(f"Declaring exchange {exchange_name}")
+                self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
-            queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
-            self.logger.info(f"Declaring queue {queue_name}")
-            channel.queue_declare(queue=queue_name, durable=True)
+                queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
+                self.logger.info(f"Declaring queue {queue_name}")
+                channel.queue_declare(queue=queue_name, durable=True)
 
-            channel.queue_bind(queue=queue_name, exchange=exchange_name)
+                channel.queue_bind(queue=queue_name, exchange=exchange_name)
 
-            channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
-            channel.start_consuming()
+                channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
+                channel.start_consuming()
 
-            return True
-        except Exception as e:
-            self.logger.error("Can't consume from queue", e)
-            return False
+                return True
+            except Exception as e:
+                self.logger.error("Can't consume from queue", e)
+                return False
+
+        consumer_thread = threading.Thread(target=start_consumer)
+        consumer_thread.start()
