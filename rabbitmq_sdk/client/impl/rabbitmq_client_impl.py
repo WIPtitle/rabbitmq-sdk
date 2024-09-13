@@ -140,15 +140,10 @@ class RabbitMQClientImpl(RabbitMQClient):
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
 
-            tag = channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
-            print(tag)
-            sys.stdout.flush()
+            channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
+            channel.start_consuming()
 
             return True
         except Exception as e:
             self.logger.error("Can't consume from queue", e)
             return False
-
-
-    def get_new_channel(self):
-        return self.new_channel()
