@@ -40,5 +40,5 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
 
 
     @abstractmethod
-    def do_handle(self, event: BaseEvent):
+    def do_handle(self, event):
         pass
