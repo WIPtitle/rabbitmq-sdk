@@ -140,7 +140,9 @@ class RabbitMQClientImpl(RabbitMQClient):
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
 
-            channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
+            tag = channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
+            print(tag)
+            sys.stdout.flush()
 
             return True
         except Exception as e:
