@@ -21,7 +21,7 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
     def handle_delivery(self, channel, method, properties, body):
         message = body.decode('utf-8')
         data = json.loads(message)
-        self.do_handle(BaseEvent.from_dict(data))
+        self.do_handle(data)
         self.send_ack(method.delivery_tag)
 
 
