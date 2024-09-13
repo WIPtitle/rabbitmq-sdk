@@ -22,8 +22,8 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
         try:
             self.logger.info("Received an event")
             message = body.decode('utf-8')
-            #data = json.loads(message)
-            self.do_handle(message)
+            data = json.loads(message)
+            self.do_handle(BaseEvent.from_dict(data))
             self.send_ack(method.delivery_tag)
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             self.logger.error("Can't process entity in queue", e)
