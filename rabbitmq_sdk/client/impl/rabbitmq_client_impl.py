@@ -146,3 +146,7 @@ class RabbitMQClientImpl(RabbitMQClient):
         except Exception as e:
             self.logger.error("Can't consume from queue", e)
             return False
+
+
+    def get_new_channel(self):
+        return self.new_channel()
