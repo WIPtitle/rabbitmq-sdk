@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 
 import pika
 from pika.exceptions import UnroutableError
@@ -138,9 +137,6 @@ class RabbitMQClientImpl(RabbitMQClient):
             channel.queue_declare(queue=queue_name, durable=True)
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
-
-            print("TEST")
-            sys.stdout.flush()
 
             channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
 
