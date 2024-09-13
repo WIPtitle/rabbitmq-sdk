@@ -1,5 +1,3 @@
-import base64
-
 from rabbitmq_sdk.enums.event import Event
 from rabbitmq_sdk.enums.service import Service
 from rabbitmq_sdk.event.base_event import BaseEvent

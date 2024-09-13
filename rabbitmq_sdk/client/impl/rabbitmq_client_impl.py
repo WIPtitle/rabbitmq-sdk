@@ -131,12 +131,14 @@ class RabbitMQClientImpl(RabbitMQClient):
             exchange_name = get_exchange_name(base_consumer.get_event().get_name())
             self.logger.info(f"Declaring exchange {exchange_name}")
             self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
+            print(exchange_name)
 
             queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
             self.logger.info(f"Declaring queue {queue_name}")
             channel.queue_declare(queue=queue_name, durable=True)
 
             channel.queue_bind(queue=queue_name, exchange=exchange_name)
+            print(queue_name)
 
             channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
 
