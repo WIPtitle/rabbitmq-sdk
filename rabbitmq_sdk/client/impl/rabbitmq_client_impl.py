@@ -48,7 +48,8 @@ class RabbitMQClientImpl(RabbitMQClient):
 
 
     def new_channel(self):
-        return self.connection.channel()
+        conn = pika.BlockingConnection(self.connection_params)
+        return conn.channel()
 
 
     def init_connection(self):
@@ -118,7 +119,6 @@ class RabbitMQClientImpl(RabbitMQClient):
 
     def consume(self, base_consumer: BaseConsumer):
         def start_consumer():
-            self.init_connection_and_publishing_channel()
             if not self.is_current_service_set():
                 self.logger.error(
                     "Current service not set, use with_current_service to set it before trying to start a consumer"
@@ -133,7 +133,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             try:
                 exchange_name = get_exchange_name(base_consumer.get_event().get_name())
                 self.logger.info(f"Declaring exchange {exchange_name}")
-                self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
+                channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
                 queue_name = get_queue_name(base_consumer.get_event().get_name(), self.current_service.name)
                 self.logger.info(f"Declaring queue {queue_name}")
