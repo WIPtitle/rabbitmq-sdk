@@ -2,8 +2,9 @@ from enum import Enum, auto
 
 
 class Event(Enum):
-    REED_CHANGED_STATUS = auto(),
-    CAMERA_CHANGED_STATUS = auto()
+    CAMERA_ALARM = auto(),
+    REED_ALARM = auto(),
+    ALARM_STOPPED = auto()
 
     def get_name(self):
         return self.name
