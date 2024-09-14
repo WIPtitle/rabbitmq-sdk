@@ -23,8 +23,6 @@ class RabbitMQClientImpl(RabbitMQClient):
     def __init__(self, connection_params):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.connection_params = connection_params
-        self.connection = None
-        self.publishing_channel = None
         self.current_service = None
 
 
@@ -47,34 +45,18 @@ class RabbitMQClientImpl(RabbitMQClient):
         return self.current_service is not None
 
 
+    def new_connection(self):
+        try:
+            return pika.BlockingConnection(self.connection_params)
+        except Exception as e:
+            raise RuntimeError("Can't connect to RabbitMQ") from e
+
+
     def new_channel(self):
-        conn = pika.BlockingConnection(self.connection_params)
-        return conn.channel()
-
-
-    def init_connection(self):
-        if self.connection is None or self.connection.is_closed:
-            try:
-                self.connection = pika.BlockingConnection(self.connection_params)
-            except Exception as e:
-                raise RuntimeError("Can't connect to RabbitMQ") from e
-
-
-    def init_publishing_channel(self):
-        if self.publishing_channel is None or self.publishing_channel.is_closed:
-            try:
-                self.publishing_channel = self.connection.channel()
-            except Exception as e:
-                raise RuntimeError("Could not create RabbitMQ channel for websocket") from e
-
-
-    def init_connection_and_publishing_channel(self):
-        self.init_connection()
-        self.init_publishing_channel()
+        return self.new_connection().channel()
 
 
     def publish(self, base_event: BaseEvent):
-        self.init_connection_and_publishing_channel()
         if not self.is_current_service_set():
             self.logger.error(
                 "Current service not set, use with_current_service to set it before trying to publish an event"
@@ -88,17 +70,18 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
         try:
-            self.publishing_channel.confirm_delivery()
+            channel = self.new_channel()
+            channel.confirm_delivery()
 
             exchange_name = get_exchange_name(base_event.get_event().get_name())
             self.logger.info(f"Declaring exchange {exchange_name}")
-            self.publishing_channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
+            channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
 
             self.logger.info("Trying to publish message")
             message = json.dumps(base_event.to_dict())
 
             try:
-                self.publishing_channel.basic_publish(
+                channel.basic_publish(
                     exchange=exchange_name,
                     routing_key='',
                     body=message,
