@@ -15,18 +15,14 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
 
 
     def close(self):
-        self.channel.basic_cancel(self.consumer_tag)
+        self.get_channel().basic_cancel(self.consumer_tag)
 
 
     def handle_delivery(self, channel, method, properties, body):
         message = body.decode('utf-8')
         data = json.loads(message)
         self.do_handle(data)
-        self.send_ack(method.delivery_tag)
-
-
-    def send_ack(self, delivery_tag):
-        self.channel.basic_ack(delivery_tag)
+        channel.basic_ack(method.delivery_tag)
 
 
     @abstractmethod

@@ -111,7 +111,7 @@ class RabbitMQClientImpl(RabbitMQClient):
             self.logger.info("Starting consumer")
 
             channel = self.new_channel()
-            base_consumer.channel = channel
+            base_consumer.set_channel(channel)
 
             try:
                 exchange_name = get_exchange_name(base_consumer.get_event().get_name())

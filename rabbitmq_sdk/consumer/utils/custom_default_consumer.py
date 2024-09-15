@@ -21,12 +21,10 @@ class CustomDefaultConsumer:
     def handle_delivery(self, consumer_tag, method, properties, body):
         pass
 
-    @property
-    def channel(self):
+    def get_channel(self):
         return self._channel
 
-    @channel.setter
-    def channel(self, channel):
+    def set_channel(self, channel):
         self._channel = channel
 
     @property
