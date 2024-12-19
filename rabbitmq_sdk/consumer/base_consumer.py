@@ -21,8 +21,12 @@ class BaseConsumer(CustomDefaultConsumer, ABC):
     def handle_delivery(self, channel, method, properties, body):
         message = body.decode('utf-8')
         data = json.loads(message)
-        self.do_handle(data)
-        channel.basic_ack(method.delivery_tag)
+        try:
+            self.do_handle(data)
+            channel.basic_ack(method.delivery_tag)
+        except Exception as e:
+            self.logger.error(f"Error handling message: {e}")
+            channel.basic_nack(method.delivery_tag)
 
 
     @abstractmethod
