@@ -20,20 +20,18 @@ def get_queue_name(event_name, service_to_name):
 
 
 class RabbitMQClientImpl(RabbitMQClient):
-    def __init__(self, connection_params):
+    def __init__(self, host, port, username, password):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.connection_params = connection_params
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
         self.current_service = None
 
 
     @classmethod
     def from_config(cls, host, port, username, password):
-        connection_params = pika.ConnectionParameters(
-            host=host,
-            port=port,
-            credentials=pika.PlainCredentials(username, password)
-        )
-        return cls(connection_params)
+        return cls(host, port, username, password)
 
 
     def with_current_service(self, current_service: Service):
@@ -47,7 +45,13 @@ class RabbitMQClientImpl(RabbitMQClient):
 
     def new_connection(self):
         try:
-            return pika.BlockingConnection(self.connection_params)
+            # try to connect only when needed
+            connection_params = pika.ConnectionParameters(
+                host=self.host,
+                port=self.port,
+                credentials=pika.PlainCredentials(self.username, self.password)
+            )
+            return pika.BlockingConnection(connection_params)
         except Exception as e:
             raise RuntimeError("Can't connect to RabbitMQ") from e
 
@@ -110,10 +114,10 @@ class RabbitMQClientImpl(RabbitMQClient):
 
             self.logger.info("Starting consumer")
 
-            channel = self.new_channel()
-            base_consumer.set_channel(channel)
-
             try:
+                channel = self.new_channel()
+                base_consumer.set_channel(channel)
+
                 exchange_name = get_exchange_name(base_consumer.get_event().get_name())
                 self.logger.info(f"Declaring exchange {exchange_name}")
                 channel.exchange_declare(exchange=exchange_name, exchange_type='fanout', durable=True)
