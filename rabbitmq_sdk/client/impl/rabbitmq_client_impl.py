@@ -105,12 +105,14 @@ class RabbitMQClientImpl(RabbitMQClient):
             return False
 
     def consume(self, base_consumer: BaseConsumer):
-        def start_consumer():
+        def start_consumer(started_event, result):
             if not self.is_current_service_set():
                 self.logger.error(
                     "Current service not set, use with_current_service to set it before trying to start a consumer"
                 )
-                return False
+                started_event.set()
+                result.append(False)
+                return
 
             self.logger.info("Starting consumer")
 
@@ -130,11 +132,16 @@ class RabbitMQClientImpl(RabbitMQClient):
 
                 channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
                 channel.start_consuming()
-
-                return True
+                started_event.set()
+                result.append(True)
             except Exception as e:
                 self.logger.error("Can't consume from queue", e)
-                return False
+                started_event.set()
+                result.append(False)
 
-        consumer_thread = threading.Thread(target=start_consumer)
+        started_event = threading.Event()
+        result = []
+        consumer_thread = threading.Thread(target=start_consumer, args=(started_event, result))
         consumer_thread.start()
+        started_event.wait()
+        return result[0] if result else False
