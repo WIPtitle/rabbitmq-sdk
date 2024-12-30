@@ -132,12 +132,13 @@ class RabbitMQClientImpl(RabbitMQClient):
 
                 channel.basic_consume(queue=queue_name, on_message_callback=base_consumer.handle_delivery, auto_ack=False)
                 channel.start_consuming()
-                started_event.set()
-                result.append(True)
             except Exception as e:
                 self.logger.error("Can't consume from queue", e)
                 started_event.set()
                 result.append(False)
+            else:
+                started_event.set()
+                result.append(True)
 
         started_event = threading.Event()
         result = []
